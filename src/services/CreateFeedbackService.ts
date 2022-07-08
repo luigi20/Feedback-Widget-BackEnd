@@ -14,12 +14,15 @@ export class CreateFeedbackService {
     ) { }
     async execute(request: CreateFeedbackDTO) {
         const { type, comment, screenshot } = request;
-        await this.feedBackRepository.create({
+        if (screenshot && !screenshot.startsWith('data:image/png;base64')) {
+            throw new Error('Invalid screenshot format.');
+        }
+        this.feedBackRepository.create({
             type,
             comment,
             screenshot
         })
-        await this.mailAdapter.sendMail({
+        this.mailAdapter.sendMail({
             subject: 'Create Feedback',
             body: [
                 `<div style:"font-family:sans-serif; font-size:16px; color: #111;">`,
