@@ -1,6 +1,9 @@
 import { prisma } from './prisma';
 import nodemailer from 'nodemailer';
 import express from 'express';
+import { CreateFeedbackService } from './services/CreateFeedbackService';
+import { PrismaFeedbacksRepository } from './repositories/prisma/prisma-feedbacks-repositories';
+import { NodemailerMailAdapter } from './adapters/nodemailer/nodemailer-mail-adapter';
 
 export const routes = express.Router();
 const transport = nodemailer.createTransport({
@@ -13,14 +16,11 @@ const transport = nodemailer.createTransport({
 });
 routes.post('/feedbacks', async (req, res) => {
     const { type, comment, screenshot } = req.body;
-    const feedback = await prisma.feedback.create({
-        data: {
-            type: type,
-            comment: comment,
-            screenshot: screenshot,
-        }
-    });
-    await transport.sendMail({
+    const prismaFeedbacksRepository = new PrismaFeedbacksRepository();
+    const nodemailerAdapter = new NodemailerMailAdapter();
+    const submitFeedback = new CreateFeedbackService(prismaFeedbacksRepository, nodemailerAdapter);
+    await submitFeedback.execute({ type, comment, screenshot });
+    /*await transport.sendMail({
         from: 'Equipe Feedget <oi@feedget.com>',
         to: 'Luis Antonio <luisopentec@gmail.com>',
         subject: 'Novo feedback',
@@ -31,5 +31,5 @@ routes.post('/feedbacks', async (req, res) => {
             `</div>`
         ].join('\n')
     });
-    return res.status(201).json(feedback);
+    return res.status(201).json(feedback);*/
 })
